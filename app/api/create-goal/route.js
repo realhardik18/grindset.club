@@ -53,9 +53,9 @@ They can already: "${existing_capabilities}"
 
 Generate only ONE task they should do today to begin toward their goal. 
 Include:
-- task_text
-- reason
-- description
+- task_text [max 6-8 words, it acts like a title]
+- reason [1-2 sentences on why you picked this how it will help the user reach their goal]
+- description [short description of 10-12 words of what the user should do]
 Return as JSON.
 `
 

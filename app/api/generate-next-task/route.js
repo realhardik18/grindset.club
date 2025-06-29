@@ -22,9 +22,9 @@ User feedback on this task: "${feedback}"
 
 Based on this, generate ONE next actionable task for the user to do next toward their goal.
 Include:
-- task_text
-- reason
-- description
+- task_text [max 6-8 words, it acts like a title]
+- reason [1-2 sentences on why you picked this how it will help the user reach their goal]
+- description [short description of 10-12 words of what the user should do]
 Return as JSON.
 `
 
