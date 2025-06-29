@@ -4,6 +4,11 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidenav from '@/app/components/Sidenav'
 
+// Predefined emoji options
+const emojiOptions = [
+  "💪", "🧠", "📚", "🏃‍♂️", "🏋️‍♀️", "🎯", "🚀", "🌱", "💡", "📝", "🎨", "🛠️", "🧘‍♂️", "🏆", "💼", "🕒", "🍎", "⚡", "🌟", "🎵", "🧩", "🧑‍💻", "📈", "🗣️", "🧹", "🛌", "🥇", "🧑‍🎓", "🧑‍🏫", "🧑‍🍳", "🧑‍🔬"
+]
+
 const steps = [
   {
     label: 'Goal Basics',
@@ -40,6 +45,7 @@ export default function NewGoalPage() {
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState(0)
   const [errors, setErrors] = useState({})
+  const [showEmojiSheet, setShowEmojiSheet] = useState(false)
   const router = useRouter()
 
   const handleChange = (e) => {
@@ -87,6 +93,12 @@ export default function NewGoalPage() {
     }
   }
 
+  const handleEmojiSelect = (emoji) => {
+    setForm({ ...form, icon: emoji })
+    setShowEmojiSheet(false)
+    setErrors({ ...errors, icon: undefined })
+  }
+
   return (
     <div className="min-h-screen bg-black text-white flex">
       <Sidenav />
@@ -116,7 +128,63 @@ export default function NewGoalPage() {
                   {f.placeholder}
                   {f.required && <span className="text-purple-400 ml-1">*</span>}
                 </label>
-                {f.type === 'textarea' ? (
+                {/* Custom emoji picker for icon field */}
+                {f.name === 'icon' ? (
+                  <div>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        id={f.name}
+                        name={f.name}
+                        type="text"
+                        value={form[f.name]}
+                        onChange={handleChange}
+                        placeholder={f.placeholder}
+                        className={`w-32 bg-zinc-800 p-3 rounded-lg border transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-purple-600 ${errors[f.name] ? 'border-red-500' : 'border-zinc-700'}`}
+                        maxLength={2}
+                        autoComplete="off"
+                      />
+                      <button
+                        type="button"
+                        className="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-2 rounded-lg font-semibold transition text-sm"
+                        onClick={() => setShowEmojiSheet((v) => !v)}
+                        tabIndex={-1}
+                      >
+                        {form.icon ? "Change Emoji" : "Pick Emoji"}
+                      </button>
+                      {form.icon && (
+                        <span className="text-2xl ml-2">{form.icon}</span>
+                      )}
+                    </div>
+                    {showEmojiSheet && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 max-w-md w-full shadow-2xl relative">
+                          <button
+                            type="button"
+                            className="absolute top-2 right-3 text-zinc-400 hover:text-white text-xl"
+                            onClick={() => setShowEmojiSheet(false)}
+                            aria-label="Close emoji picker"
+                          >
+                            ×
+                          </button>
+                          <div className="mb-4 text-lg font-semibold text-white">Pick an Emoji</div>
+                          <div className="grid grid-cols-8 gap-2">
+                            {emojiOptions.map((emoji) => (
+                              <button
+                                type="button"
+                                key={emoji}
+                                className="text-2xl hover:scale-125 transition-transform"
+                                onClick={() => handleEmojiSelect(emoji)}
+                                aria-label={`Select ${emoji}`}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : f.type === 'textarea' ? (
                   <textarea
                     id={f.name}
                     name={f.name}
