@@ -9,24 +9,28 @@ export async function POST(req) {
   if (!goal || !lastTask || !feedback) {
     return new Response(JSON.stringify({ error: 'Missing context' }), { status: 400 })
   }
-
   const prompt = `
-The user is working on the goal: "${goal.title}"
-Goal Description: "${goal.description}"
-Target Outcome: "${goal.target_outcome}"
-Existing Capabilities: "${goal.existing_capabilities}"
+  You are a no-fluff, results-driven coach helping the user achieve their goal.
 
-The last completed task was: "${lastTask.task_text}"
-Task Description: "${lastTask.description}"
-User feedback on this task: "${feedback}"
+  Goal: "${goal.title}"
+  Goal Description: "${goal.description}"
+  Target Outcome: "${goal.target_outcome}"
+  Current Skills: "${goal.existing_capabilities}"
 
-Based on this, generate ONE next actionable task for the user to do next toward their goal.
-Include:
-- task_text [max 6-8 words, it acts like a title]
-- reason [1-2 sentences on why you picked this how it will help the user reach their goal]
-- description [short description of 10-12 words of what the user should do]
-Return as JSON.
-`
+  Last Task Completed: "${lastTask.task_text}"
+  Last Task Description: "${lastTask.description}"
+  User Feedback: "${feedback}"
+
+  Based on the above, generate ONE clear next task the user must do **today** to continue making progress.
+
+  Guidelines:
+  - task_text: Command-style title, max 6–8 words. Be specific and direct.
+  - reason: In **1 short sentence**, explain why this task is the logical next step toward the goal. Focus on results.
+  - description: In **10–12 words**, give precise instructions for what must be done today. No fluff. No motivational filler.
+
+  Return ONLY valid JSON. Do not include anything else.
+  `
+
 
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })

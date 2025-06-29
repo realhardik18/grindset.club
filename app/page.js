@@ -25,7 +25,7 @@ export default function Home() {
           <p className="text-xl sm:text-2xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
             AI-powered productivity for high-performers. Track goals, build memory, and plan your path to greatness.
           </p>
-          <Link href={'/dashboard'}>
+          <Link href={'/dashboard/goals'}>
             <button className="group relative px-8 py-4 bg-purple-600 rounded-2xl font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 focus:outline-none focus:ring-4 focus:ring-purple-500/50">
               <span className="relative z-10">Start Your Journey</span>
               <div className="absolute inset-0 bg-purple-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"></div>

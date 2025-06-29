@@ -30,6 +30,32 @@ export async function POST(req) {
     const client = await clientPromise
     const db = client.db()
 
+    // LLM prompt for feasibility with reasoning
+    const feasibilityPrompt = `
+The user has set a goal: "${title}"
+Description: "${description}"
+Target Outcome: "${target_outcome}"
+They can already: "${existing_capabilities}"
+Timeline: ${duration} days
+
+Is this goal realistically possible for the user to achieve in the given timeline? 
+Respond with a JSON: { "feasible": true/false, "reason": "short explanation why or why not" }
+`
+    const feasibilityModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const feasibilityResult = await feasibilityModel.generateContent(feasibilityPrompt)
+    const feasibilityText = feasibilityResult.response.text()
+    let feasible = true
+    let feasibility_reason = ""
+    try {
+      const match = feasibilityText.match(/{[\s\S]*}/)
+      const parsed = match ? JSON.parse(match[0]) : { feasible: true, reason: "" }
+      feasible = parsed.feasible
+      feasibility_reason = parsed.reason || ""
+    } catch (err) {
+      feasible = true
+      feasibility_reason = ""
+    }
+
     // Create goal document
     const goalDoc = {
       title,
@@ -40,27 +66,33 @@ export async function POST(req) {
       existing_capabilities,
       user_id: userId,
       created_at: new Date(),
+      feasible,
+      feasibility_reason,
     }
 
     const goalInsert = await db.collection('goals').insertOne(goalDoc)
     const goalId = goalInsert.insertedId
 
-    const prompt = `
-The user has set a goal: "${title}"
+const taskPrompt = `
+You are a strict coach helping the user achieve their goal. 
+Their goal is: "${title}"
 Description: "${description}"
 Target Outcome: "${target_outcome}"
-They can already: "${existing_capabilities}"
+Current Skills: "${existing_capabilities}"
 
-Generate only ONE task they should do today to begin toward their goal. 
-Include:
-- task_text [max 6-8 words, it acts like a title]
-- reason [1-2 sentences on why you picked this how it will help the user reach their goal]
-- description [short description of 10-12 words of what the user should do]
-Return as JSON.
+Generate ONE concrete, actionable task the user must do **today** to begin making measurable progress.
+
+Requirements:
+- task_text: Use only **6-8 direct words**, like a clear title or command.
+- reason: In **1 sentence**, explain how this specific task moves the user closer to their goal. Be practical and results-driven.
+- description: In **10-12 words**, clearly instruct what the user must do today. No fluff. No motivation. Only action.
+
+Return ONLY valid JSON. Do not include commentary or preamble.
 `
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
-    const result = await model.generateContent(prompt)
+
+    const taskModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const result = await taskModel.generateContent(taskPrompt)
     const text = result.response.text()
 
     let json

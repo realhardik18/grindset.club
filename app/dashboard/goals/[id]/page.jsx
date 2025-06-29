@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import {
   Calendar,
@@ -17,6 +17,13 @@ import {
   Loader2,
   Trash2,
   X,
+  MoreVertical,
+  Settings,
+  Info,
+  AlertTriangle,
+  Check,
+  Edit,
+  ChevronDown,
 } from "lucide-react"
 import Sidenav from "@/app/components/Sidenav"
 
@@ -29,6 +36,21 @@ export default function GoalDetailPage() {
   const [deleting, setDeleting] = useState(false)
   const [deleteInput, setDeleteInput] = useState("")
   const [deleteError, setDeleteError] = useState("")
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [activeTaskMenu, setActiveTaskMenu] = useState(null)
+  const taskMenuRef = useRef(null)
+
+  // Close task menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (taskMenuRef.current && !taskMenuRef.current.contains(event.target)) {
+        setActiveTaskMenu(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const fetchGoal = async () => {
@@ -139,6 +161,31 @@ export default function GoalDetailPage() {
     }
   }
 
+  const handleTaskStatusChange = async (taskId, newStatus) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/update-task-status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, status: newStatus })
+      });
+      
+      if (res.ok) {
+        // Update local state
+        setTasks(tasks.map(task => 
+          task._id === taskId ? {...task, status: newStatus} : task
+        ));
+      } else {
+        console.error("Failed to update task status");
+      }
+    } catch (error) {
+      console.error("Error updating task status:", error);
+    } finally {
+      setLoading(false);
+      setActiveTaskMenu(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex">
       <Sidenav />
@@ -147,40 +194,76 @@ export default function GoalDetailPage() {
         style={{ marginLeft: "var(--sidenav-width, 16rem)", padding: "2rem" }}
       >
         <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="bg-zinc-900 rounded-xl p-8 border border-zinc-800">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-lg bg-zinc-800 flex items-center justify-center text-2xl border border-zinc-700">
+          {/* Header - Simplified */}
+          <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center text-xl border border-zinc-700">
                   {goal.icon}
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">{goal.title}</h1>
-                  <p className="text-zinc-400 text-lg max-w-2xl">{goal.description}</p>
+                  <h1 className="text-2xl font-bold text-white">{goal.title}</h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="relative group">
+                      <div className={`px-2 py-1 rounded-full flex items-center gap-1 ${
+                        goal.feasible ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                      }`}>
+                        {goal.feasible ? (
+                          <CheckCircle className="w-3 h-3" />
+                        ) : (
+                          <AlertTriangle className="w-3 h-3" />
+                        )}
+                        <span className="text-xs font-medium">
+                          {goal.feasible ? 'Achievable' : 'Needs Adjustment'}
+                        </span>
+                        <Info className="w-3 h-3 ml-1 cursor-help" />
+                      </div>
+                      
+                      {goal.feasibility_reason && (
+                        <div className="absolute left-0 top-full mt-2 z-10 bg-zinc-800 border border-zinc-700 rounded-lg p-3 w-64 text-xs text-zinc-300 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                          {goal.feasibility_reason}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs text-zinc-500">
+                      <Calendar className="inline w-3 h-3 mr-1" />
+                      {new Date(goal.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-sm text-zinc-500 mb-1">Created</div>
-                <div className="text-zinc-300 font-medium mb-4">
-                  {new Date(goal.created_at).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </div>
+
+              <div className="flex gap-2">
                 <button
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                  onClick={() => router.push(`/dashboard/goals/edit/${id}`)}
+                  className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors text-zinc-400 hover:text-zinc-200"
+                  title="Edit Goal"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+                <button
                   onClick={() => setDeleting(true)}
+                  className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors text-red-400"
+                  title="Delete Goal"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete Goal
                 </button>
+              </div>
+            </div>
+            
+            {/* Description with hover animation */}
+            <div className="mt-4 group cursor-pointer relative overflow-hidden">
+              <div className="text-zinc-400 text-sm line-clamp-1 group-hover:line-clamp-none transition-all duration-300">
+                {goal.description}
               </div>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
@@ -188,7 +271,7 @@ export default function GoalDetailPage() {
                 </div>
                 <div
                   className={`text-xs font-medium px-2 py-1 rounded-full ${
-                    daysLeft > 0 ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                    daysLeft > 0 ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"
                   }`}
                 >
                   {daysLeft > 0 ? "ACTIVE" : "OVERDUE"}
@@ -205,9 +288,18 @@ export default function GoalDetailPage() {
                 </div>
                 <div className="text-xs text-blue-400 font-medium px-2 py-1 bg-blue-500/20 rounded-full">PROGRESS</div>
               </div>
-              <div className="text-2xl font-bold text-white mb-1">{Math.round(progressPercentage)}%</div>
-              <div className="text-sm text-zinc-400">
-                {completedCount} of {totalTasks} completed
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-2xl font-bold text-white">{Math.round(progressPercentage)}%</div>
+                <div className="text-sm text-zinc-400">
+                  {completedCount}/{totalTasks} tasks
+                </div>
+              </div>
+              {/* Progress bar inside the card */}
+              <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${progressPercentage}%` }}
+                />
               </div>
             </div>
 
@@ -238,56 +330,33 @@ export default function GoalDetailPage() {
             </div>
           </div>
 
-          {/* Progress Section */}
-          <div className="bg-zinc-900 rounded-xl p-8 border border-zinc-800">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">Goal Progress</h3>
-                  <p className="text-zinc-400 text-sm">Track your journey to success</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-white">{Math.round(progressPercentage)}%</div>
-                <div className="text-sm text-zinc-400">Complete</div>
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="w-full h-3 bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
-              <div className="flex justify-between mt-3 text-xs text-zinc-500">
-                <span>Started</span>
-                <span>
-                  {completedCount}/{totalTasks} Tasks
-                </span>
-                <span>Complete</span>
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Current Task Spotlight */}
             <div className="lg:col-span-2">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-purple-400" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Current Focus</h2>
+                    <p className="text-zinc-400 text-sm">Your active task spotlight</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-white">Current Focus</h2>
-                  <p className="text-zinc-400 text-sm">Your active task spotlight</p>
-                </div>
+                
+                {currentTask && currentTask.status !== "completed" && (
+                  <button 
+                    onClick={() => handleTaskStatusChange(currentTask._id, "completed")}
+                    className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg flex items-center gap-2 border border-emerald-500/30 transition-all"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span className="text-sm font-medium">Mark Complete</span>
+                  </button>
+                )}
               </div>
 
               {currentTask ? (
-                <div className="bg-zinc-900 rounded-xl p-8 border border-zinc-800">
+                <div className="bg-zinc-900 rounded-xl p-8 border border-zinc-800 relative">
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-4">
                       <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse" />
@@ -295,14 +364,57 @@ export default function GoalDetailPage() {
                         <span className="text-sm font-medium text-purple-300">Step {currentTask.step}</span>
                       </div>
                     </div>
-                    <div
-                      className={`px-4 py-2 rounded-full text-sm font-medium ${
-                        currentTask.status === "completed"
-                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                      }`}
-                    >
-                      {currentTask.status === "completed" ? "✓ Completed" : "⚡ In Progress"}
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`px-4 py-2 rounded-full text-sm font-medium ${
+                          currentTask.status === "completed"
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                        }`}
+                      >
+                        {currentTask.status === "completed" ? "✓ Completed" : "⚡ In Progress"}
+                      </div>
+                      
+                      <div className="relative">
+                        <button 
+                          onClick={() => setActiveTaskMenu(currentTask._id)}
+                          className="p-2 hover:bg-zinc-800 rounded-full transition-colors"
+                        >
+                          <MoreVertical className="w-5 h-5 text-zinc-400" />
+                        </button>
+                        
+                        {activeTaskMenu === currentTask._id && (
+                          <div 
+                            ref={taskMenuRef}
+                            className="absolute right-0 top-full mt-2 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-10 w-48 py-1 overflow-hidden"
+                          >
+                            <button
+                              onClick={() => router.push(`/dashboard/tasks/edit/${currentTask._id}`)}
+                              className="w-full px-4 py-2 text-left hover:bg-zinc-700 flex items-center gap-2 text-zinc-200"
+                            >
+                              <Edit className="w-4 h-4" />
+                              <span>Edit Task</span>
+                            </button>
+                            {currentTask.status !== "completed" ? (
+                              <button
+                                onClick={() => handleTaskStatusChange(currentTask._id, "completed")}
+                                className="w-full px-4 py-2 text-left hover:bg-emerald-900/30 flex items-center gap-2 text-emerald-400"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                <span>Mark Complete</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleTaskStatusChange(currentTask._id, "in_progress")}
+                                className="w-full px-4 py-2 text-left hover:bg-amber-900/30 flex items-center gap-2 text-amber-400"
+                              >
+                                <Circle className="w-4 h-4" />
+                                <span>Mark Incomplete</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -437,7 +549,7 @@ export default function GoalDetailPage() {
                 {(completedTasks.length > 0 ? completedTasks : tasks.slice(1)).map((task) => (
                   <div
                     key={task._id}
-                    className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 hover:border-zinc-700 transition-colors"
+                    className="bg-zinc-900 rounded-xl p-6 border border-zinc-800 hover:border-zinc-700 transition-colors relative group"
                   >
                     <div className="flex items-start gap-4">
                       <div
@@ -479,7 +591,33 @@ export default function GoalDetailPage() {
                         )}
                       </div>
 
-                      <ArrowRight className="w-4 h-4 text-zinc-600" />
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {task.status !== "completed" ? (
+                          <button
+                            onClick={() => handleTaskStatusChange(task._id, "completed")}
+                            className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg text-emerald-400 transition-colors"
+                            title="Mark as Complete"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleTaskStatusChange(task._id, "in_progress")}
+                            className="p-2 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg text-amber-400 transition-colors"
+                            title="Mark as Incomplete"
+                          >
+                            <Circle className="w-4 h-4" />
+                          </button>
+                        )}
+                        
+                        <button
+                          onClick={() => router.push(`/dashboard/tasks/edit/${task._id}`)}
+                          className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-zinc-200 transition-colors"
+                          title="Edit Task"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
