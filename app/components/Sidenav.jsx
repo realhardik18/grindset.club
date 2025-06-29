@@ -1,9 +1,15 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export default function Sidenav() {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const pathname = usePathname()
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--sidenav-width', isCollapsed ? '4rem' : '16rem')
+  }, [isCollapsed])
 
   const navItems = [
     {
@@ -26,7 +32,7 @@ export default function Sidenav() {
     },
     {
       name: 'Daily To Do',
-      href: '/dashboard/todo',
+      href: '/dashboard/tasks',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -86,30 +92,39 @@ export default function Sidenav() {
 
       {/* Navigation Items */}
       <nav className="p-4 space-y-2 overflow-hidden">
-        {navItems.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className="group flex items-center px-3 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-purple-600/30 hover:border-purple-500 border border-transparent transition-all duration-200 relative"
-            title={isCollapsed ? item.name : ''}
-          >
-            <div className="flex-shrink-0 text-purple-500 group-hover:text-purple-400 w-6 h-6 flex items-center justify-center">
-              {item.icon}
-            </div>
-            <span className={`ml-3 font-medium transition-all duration-300 whitespace-nowrap ${
-              isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
-            }`}>
-              {item.name}
-            </span>
-            
-            {/* Tooltip for collapsed state */}
-            {isCollapsed && (
-              <div className="absolute left-full ml-2 px-2 py-1 bg-purple-600 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                {item.name}
+        {navItems.map((item) => {
+          const isActive = pathname === item.href
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`group flex items-center px-3 py-3 rounded-xl border transition-all duration-200 relative ${
+                isActive 
+                  ? 'text-white bg-purple-600/40 border-purple-500' 
+                  : 'text-gray-400 hover:text-white hover:bg-purple-600/30 hover:border-purple-500 border-transparent'
+              }`}
+              title={isCollapsed ? item.name : ''}
+            >
+              <div className={`flex-shrink-0 w-6 h-6 flex items-center justify-center ${
+                isActive ? 'text-purple-300' : 'text-purple-500 group-hover:text-purple-400'
+              }`}>
+                {item.icon}
               </div>
-            )}
-          </Link>
-        ))}
+              <span className={`ml-3 font-medium transition-all duration-300 whitespace-nowrap ${
+                isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+              }`}>
+                {item.name}
+              </span>
+              
+              {/* Tooltip for collapsed state */}
+              {isCollapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-purple-600 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  {item.name}
+                </div>
+              )}
+            </Link>
+          )
+        })}
       </nav>
 
       {/* Bottom Section */}
