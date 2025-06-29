@@ -75,51 +75,57 @@ export default function Sidenav() {
     }`}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-purple-500/30 h-16">
-        <div className={`transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'}`}>
+        <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'opacity-0 scale-95 w-0 overflow-hidden' : 'opacity-100 scale-100 w-auto'}`}>
           <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent whitespace-nowrap">
             Grindset.club
           </h2>
         </div>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg hover:bg-purple-600/20 transition-colors duration-200 text-purple-400 hover:text-purple-300 flex-shrink-0"
+          className={`p-2 rounded-lg hover:bg-purple-600/20 transition-all duration-200 text-purple-400 hover:text-purple-300 flex-shrink-0 hover:scale-110 ${
+            isCollapsed ? 'ml-0' : 'ml-2'
+          }`}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          <svg className={`w-5 h-5 transition-transform duration-300 ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg className={`w-5 h-5 transition-transform duration-300 ease-in-out ${isCollapsed ? 'rotate-180' : 'rotate-0'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
           </svg>
         </button>
       </div>
 
       {/* Navigation Items */}
-      <nav className="p-4 space-y-2 overflow-hidden">
-        {navItems.map((item) => {
+      <nav className="p-4 space-y-2 overflow-visible">
+        {navItems.map((item, index) => {
           const isActive = pathname === item.href
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`group flex items-center px-3 py-3 rounded-xl border transition-all duration-200 relative ${
+              className={`group relative flex items-center px-3 py-3 rounded-xl border transition-all duration-200 hover:scale-[1.02] ${
                 isActive 
-                  ? 'text-white bg-purple-600/40 border-purple-500' 
+                  ? 'text-white bg-purple-600/40 border-purple-500 shadow-lg shadow-purple-500/20' 
                   : 'text-gray-400 hover:text-white hover:bg-purple-600/30 hover:border-purple-500 border-transparent'
               }`}
-              title={isCollapsed ? item.name : ''}
+              style={{
+                transitionDelay: isCollapsed ? `${index * 50}ms` : '0ms'
+              }}
             >
-              <div className={`flex-shrink-0 w-6 h-6 flex items-center justify-center ${
+              <div className={`flex-shrink-0 w-6 h-6 flex items-center justify-center transition-all duration-200 ${
                 isActive ? 'text-purple-300' : 'text-purple-500 group-hover:text-purple-400'
               }`}>
                 {item.icon}
               </div>
-              <span className={`ml-3 font-medium transition-all duration-300 whitespace-nowrap ${
-                isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+              <span className={`ml-3 font-medium transition-all duration-300 ease-in-out whitespace-nowrap ${
+                isCollapsed ? 'opacity-0 scale-95 w-0 overflow-hidden translate-x-2' : 'opacity-100 scale-100 w-auto translate-x-0'
               }`}>
                 {item.name}
               </span>
               
-              {/* Tooltip for collapsed state */}
+              {/* Enhanced Tooltip for collapsed state */}
               {isCollapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-purple-600 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                <div className="absolute left-full ml-6 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 border border-purple-500/30 shadow-lg shadow-purple-500/10 transform scale-95 group-hover:scale-100">
                   {item.name}
+                  <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 border-l border-b border-purple-500/30 rotate-45"></div>
                 </div>
               )}
             </Link>
@@ -129,18 +135,18 @@ export default function Sidenav() {
 
       {/* Bottom Section */}
       <div className="absolute bottom-4 left-4 right-4">
-        <div className={`flex items-center p-3 rounded-xl bg-purple-600/20 border border-purple-500/30 ${
+        <div className={`flex items-center p-3 rounded-xl bg-purple-600/20 border border-purple-500/30 transition-all duration-300 hover:bg-purple-600/30 ${
           isCollapsed ? 'justify-center' : 'space-x-3'
         }`}>
-          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 hover:bg-purple-500">
             <span className="text-white text-sm font-semibold">U</span>
           </div>
-          {!isCollapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white truncate">User</p>
-              <p className="text-xs text-purple-400 truncate">Elite Member</p>
-            </div>
-          )}
+          <div className={`min-w-0 flex-1 transition-all duration-300 ease-in-out ${
+            isCollapsed ? 'opacity-0 scale-95 w-0 overflow-hidden translate-x-2' : 'opacity-100 scale-100 w-auto translate-x-0'
+          }`}>
+            <p className="text-sm font-medium text-white truncate">User</p>
+            <p className="text-xs text-purple-400 truncate">Elite Member</p>
+          </div>
         </div>
       </div>
     </div>
