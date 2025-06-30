@@ -155,7 +155,7 @@ export default function Home() {
           <h3 className="text-3xl sm:text-4xl font-bold mb-6 text-white">Ready to Transform Your Productivity?</h3>
 
           <p className="text-lg text-gray-500 mb-8 max-w-xl mx-auto">
-            Join thousands of high-performers who've already elevated their game.
+            Join thousands of high-performers who&apos;ve already elevated their game.
           </p>
 
           <Link href="/dashboard/goals">
