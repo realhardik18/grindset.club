@@ -57,16 +57,25 @@ export default function Sidenav() {
       isCollapsed ? 'w-16' : 'w-64'
     }`}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-purple-500/30 h-16">
-        <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'opacity-0 scale-95 w-0 overflow-hidden' : 'opacity-100 scale-100 w-auto'}`}>
-          <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent whitespace-nowrap">
-            Grindset.club
-          </h2>
+      <div className={`flex items-center justify-between border-b border-purple-500/30 h-16 px-0 ${isCollapsed ? 'pl-0 pr-0' : 'px-4'}`}>
+        <div className={`transition-all duration-300 ease-in-out flex items-center ${isCollapsed ? 'justify-center w-full' : ''}`}>
+          {isCollapsed ? (
+            // Show logo image when collapsed
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="w-8 h-8 object-contain"
+            />
+          ) : (
+            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent whitespace-nowrap">
+              Grindset.club
+            </h2>
+          )}
         </div>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={`p-2 rounded-lg hover:bg-purple-600/20 transition-all duration-200 text-purple-400 hover:text-purple-300 flex-shrink-0 hover:scale-110 ${
-            isCollapsed ? 'ml-0' : 'ml-2'
+            isCollapsed ? 'ml-0 mr-0' : 'ml-2'
           }`}
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
@@ -77,49 +86,50 @@ export default function Sidenav() {
       </div>
 
       {/* Navigation Items */}
-      <nav className="p-4 space-y-2 overflow-visible">
+      <nav className={`space-y-1 ${isCollapsed ? 'p-2' : 'p-4'} overflow-visible`}>
         {navItems.map((item, index) => {
           const isActive = pathname === item.href
           return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`group relative flex items-center px-3 py-3 rounded-xl border transition-all duration-200 hover:scale-[1.02] ${
-                isActive 
-                  ? 'text-white bg-purple-600/40 border-purple-500 shadow-lg shadow-purple-500/20' 
-                  : 'text-gray-400 hover:text-white hover:bg-purple-600/30 hover:border-purple-500 border-transparent'
-              }`}
-              style={{
-                transitionDelay: isCollapsed ? `${index * 50}ms` : '0ms'
-              }}
-            >
-              <div className={`flex-shrink-0 w-6 h-6 flex items-center justify-center transition-all duration-200 ${
-                isActive ? 'text-purple-300' : 'text-purple-500 group-hover:text-purple-400'
-              }`}>
-                {item.icon}
-              </div>
-              <span className={`ml-3 font-medium transition-all duration-300 ease-in-out whitespace-nowrap ${
-                isCollapsed ? 'opacity-0 scale-95 w-0 overflow-hidden translate-x-2' : 'opacity-100 scale-100 w-auto translate-x-0'
-              }`}>
-                {item.name}
-              </span>
-              
-              {/* Enhanced Tooltip for collapsed state */}
+            <div key={item.name} className="relative group">
+              <Link
+                href={item.href}
+                className={`flex items-center rounded-xl border transition-all duration-200 hover:scale-[1.04] ${
+                  isActive 
+                    ? 'text-white bg-purple-600/40 border-purple-500 shadow-lg shadow-purple-500/20' 
+                    : 'text-gray-400 hover:text-white hover:bg-purple-600/30 hover:border-purple-500 border-transparent'
+                } ${isCollapsed ? 'justify-center p-3' : 'px-3 py-3'}`}
+                style={{
+                  transitionDelay: isCollapsed ? `${index * 50}ms` : '0ms'
+                }}
+              >
+                <div className={`flex-shrink-0 w-6 h-6 flex items-center justify-center transition-all duration-200 ${
+                  isActive ? 'text-purple-300' : 'text-purple-500 group-hover:text-purple-400'
+                }`}>
+                  {item.icon}
+                </div>
+                {/* Hide text when collapsed */}
+                {!isCollapsed && (
+                  <span className="ml-3 font-medium transition-all duration-300 ease-in-out whitespace-nowrap">
+                    {item.name}
+                  </span>
+                )}
+              </Link>
+              {/* Tooltip for collapsed state */}
               {isCollapsed && (
-                <div className="absolute left-full ml-6 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 border border-purple-500/30 shadow-lg shadow-purple-500/10 transform scale-95 group-hover:scale-100">
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 border border-purple-500/30 shadow-lg shadow-purple-500/10">
                   {item.name}
                   <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 border-l border-b border-purple-500/30 rotate-45"></div>
                 </div>
               )}
-            </Link>
+            </div>
           )
         })}
       </nav>
 
       {/* Bottom Section */}
-      <div className="absolute bottom-4 left-4 right-4">
-        <div className={`flex items-center p-3 rounded-xl bg-purple-600/20 border border-purple-500/30 transition-all duration-300 hover:bg-purple-600/30 ${
-          isCollapsed ? 'justify-center' : 'space-x-3'
+      <div className={`absolute bottom-4 ${isCollapsed ? 'left-1 right-1' : 'left-4 right-4'}`}>
+        <div className={`flex items-center rounded-xl bg-purple-600/20 border border-purple-500/30 transition-all duration-300 hover:bg-purple-600/30 ${
+          isCollapsed ? 'justify-center p-2' : 'space-x-3 p-3'
         }`}>
           {user ? (
             <>
@@ -128,24 +138,25 @@ export default function Sidenav() {
                 alt="Profile"
                 className="w-8 h-8 rounded-full flex-shrink-0 transition-all duration-200 object-cover"
               />
-              <div className={`min-w-0 flex-1 transition-all duration-300 ease-in-out ${
-                isCollapsed ? 'opacity-0 scale-95 w-0 overflow-hidden translate-x-2' : 'opacity-100 scale-100 w-auto translate-x-0'
-              }`}>
-                <p className="text-sm font-medium text-white truncate">{user.fullName || user.username || user.emailAddresses?.[0]?.emailAddress}</p>
-                <p className="text-xs text-purple-400 truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
-              </div>
+              {/* Hide user info when collapsed */}
+              {!isCollapsed && (
+                <div className="min-w-0 flex-1 transition-all duration-300 ease-in-out">
+                  <p className="text-sm font-medium text-white truncate">{user.fullName || user.username || user.emailAddresses?.[0]?.emailAddress}</p>
+                  <p className="text-xs text-purple-400 truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
+                </div>
+              )}
             </>
           ) : (
             <>
               <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 hover:bg-purple-500">
                 <span className="text-white text-sm font-semibold">U</span>
               </div>
-              <div className={`min-w-0 flex-1 transition-all duration-300 ease-in-out ${
-                isCollapsed ? 'opacity-0 scale-95 w-0 overflow-hidden translate-x-2' : 'opacity-100 scale-100 w-auto translate-x-0'
-              }`}>
-                <p className="text-sm font-medium text-white truncate">User</p>
-                <p className="text-xs text-purple-400 truncate">Elite Member</p>
-              </div>
+              {!isCollapsed && (
+                <div className="min-w-0 flex-1 transition-all duration-300 ease-in-out">
+                  <p className="text-sm font-medium text-white truncate">User</p>
+                  <p className="text-xs text-purple-400 truncate">Elite Member</p>
+                </div>
+              )}
             </>
           )}
         </div>

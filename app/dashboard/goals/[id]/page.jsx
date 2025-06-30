@@ -149,7 +149,7 @@ export default function GoalDetailPage() {
     setLoading(true)
 
     try {
-      const res = await fetch(`/api/delete-goal?id=${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/delete-goal?id=${id}&user=${encodeURIComponent(userEmail)}`, { method: "DELETE" })
       if (!res.ok) {
         const data = await res.json()
         setDeleteError(data.error || "Failed to delete goal. Please try again.")
