@@ -43,6 +43,10 @@ export default function GoalDetailPage() {
   const [editing, setEditing] = useState(false);
   const [activeTaskMenu, setActiveTaskMenu] = useState(null);
   const taskMenuRef = useRef(null);
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editGoal, setEditGoal] = useState(null)
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState("")
 
   // Close task menu when clicking outside
   useEffect(() => {
@@ -186,6 +190,60 @@ export default function GoalDetailPage() {
     }
   };
 
+  // Open edit modal and prefill fields
+  const openEditModal = () => {
+    setEditGoal({
+      title: goal.title,
+      description: goal.description,
+      duration: goal.duration,
+      target_outcome: goal.target_outcome,
+    })
+    setShowEditModal(true)
+    setEditError("")
+  }
+
+  // Handle edit form changes
+  const handleEditChange = (e) => {
+    const { name, value } = e.target
+    setEditGoal((prev) => ({
+      ...prev,
+      [name]: name === "duration" ? Number(value) : value,
+    }))
+  }
+
+  // Save edited goal
+  const handleEditSave = async () => {
+    setEditLoading(true)
+    setEditError("")
+    try {
+      const res = await fetch(`/api/update-goal`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goalId: id, // was 'id', should be 'goalId'
+          user: userEmail, // add user email as 'user'
+          ...editGoal,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setEditError(data.error || "Failed to update goal.")
+        setEditLoading(false)
+        return
+      }
+      // Refresh goal data
+      setGoal((prev) => ({
+        ...prev,
+        ...editGoal,
+      }))
+      setShowEditModal(false)
+    } catch (err) {
+      setEditError("Failed to update goal.")
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex">
       <Sidenav />
@@ -238,7 +296,7 @@ export default function GoalDetailPage() {
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => router.push(`/dashboard/goals/edit/${id}`)}
+                  onClick={openEditModal}
                   className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors text-zinc-400 hover:text-zinc-200"
                   title="Edit Goal"
                 >
@@ -626,6 +684,95 @@ export default function GoalDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Edit Goal Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/70"
+            onClick={() => setShowEditModal(false)}
+          />
+          <div className="relative bg-zinc-900 border border-zinc-700 rounded-xl p-8 w-full max-w-lg mx-4 shadow-2xl">
+            <button
+              className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-300 transition-colors"
+              onClick={() => setShowEditModal(false)}
+              disabled={editLoading}
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-bold text-white mb-2">Edit Goal</h2>
+              <p className="text-zinc-400 text-sm">Update your goal details below.</p>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">Title</label>
+                <input
+                  className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-purple-500 focus:outline-none"
+                  name="title"
+                  value={editGoal.title}
+                  onChange={handleEditChange}
+                  disabled={editLoading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">Description</label>
+                <textarea
+                  className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-purple-500 focus:outline-none"
+                  name="description"
+                  value={editGoal.description}
+                  onChange={handleEditChange}
+                  rows={3}
+                  disabled={editLoading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">Target Outcome</label>
+                <input
+                  className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-purple-500 focus:outline-none"
+                  name="target_outcome"
+                  value={editGoal.target_outcome}
+                  onChange={handleEditChange}
+                  disabled={editLoading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">Duration (days)</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-purple-500 focus:outline-none"
+                  name="duration"
+                  value={editGoal.duration}
+                  onChange={handleEditChange}
+                  disabled={editLoading}
+                />
+              </div>
+              {editError && <div className="text-red-400 text-sm">{editError}</div>}
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  !editLoading
+                    ? "bg-purple-600 hover:bg-purple-700 text-white"
+                    : "bg-purple-900 text-purple-400 cursor-not-allowed"
+                }`}
+                disabled={editLoading}
+                onClick={handleEditSave}
+              >
+                {editLoading ? <Loader2 className="animate-spin w-4 h-4 mx-auto" /> : "Save Changes"}
+              </button>
+              <button
+                className="flex-1 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg font-medium transition-colors"
+                onClick={() => setShowEditModal(false)}
+                disabled={editLoading}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleting && (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useUser, RedirectToSignIn } from "@clerk/nextjs"
 import Sidenav from "../../components/Sidenav"
 import Link from "next/link"
@@ -32,30 +32,40 @@ export default function Tasks() {
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
   const [updatingTask, setUpdatingTask] = useState(null)
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false)
+  const [feedbackTask, setFeedbackTask] = useState(null)
+  const [feedbackText, setFeedbackText] = useState("")
+  const [submittingFeedback, setSubmittingFeedback] = useState(false)
+  const [feedbackError, setFeedbackError] = useState("")
+  const feedbackInputRef = useRef(null)
+
+  // Refetch tasks and goals
+  const fetchData = async () => {
+    if (!userEmail) return
+    setLoading(true)
+    try {
+      const [tasksRes, goalsRes] = await Promise.all([
+        fetch(`/api/get-tasks-all?user=${encodeURIComponent(userEmail)}`),
+        fetch(`/api/get-goals?user=${encodeURIComponent(userEmail)}`)
+      ])
+      if (tasksRes.ok) {
+        const tasksData = await tasksRes.json()
+        setTasks(tasksData)
+      }
+      if (goalsRes.ok) {
+        const goalsData = await goalsRes.json()
+        setGoals(goalsData)
+      }
+    } catch (error) {
+      console.error("Failed to fetch data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    if (!userEmail) return;
-    const fetchData = async () => {
-      try {
-        const [tasksRes, goalsRes] = await Promise.all([
-          fetch(`/api/get-tasks-all?user=${encodeURIComponent(userEmail)}`),
-          fetch(`/api/get-goals?user=${encodeURIComponent(userEmail)}`)
-        ])
-        if (tasksRes.ok) {
-          const tasksData = await tasksRes.json()
-          setTasks(tasksData)
-        }
-        if (goalsRes.ok) {
-          const goalsData = await goalsRes.json()
-          setGoals(goalsData)
-        }
-      } catch (error) {
-        console.error("Failed to fetch data:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchData()
+    // eslint-disable-next-line
   }, [userEmail])
 
   const handleToggleComplete = async (task) => {
@@ -69,29 +79,47 @@ export default function Tasks() {
         body: JSON.stringify({ id: task._id, status: newStatus, user: userEmail }),
       })
       if (newStatus === "completed") {
-        const feedback = window.prompt(
-          "Great job! Please provide feedback on this task (what went well, what was hard, etc.):",
-        )
-        if (feedback) {
-          const goalRes = await fetch(`/api/get-goals?id=${task.goal_id}&user=${encodeURIComponent(userEmail)}`)
-          const goal = goalRes.ok ? (await goalRes.json())[0] : null
-          await fetch("/api/generate-next-task", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              goal,
-              lastTask: task,
-              feedback,
-              user: userEmail
-            }),
-          })
-        }
+        setFeedbackTask(task)
+        setShowFeedbackModal(true)
+        setTimeout(() => feedbackInputRef.current?.focus(), 100)
       }
     } catch (error) {
       console.error("Failed to update task:", error)
       setTasks((tasks) => tasks.map((t) => (t._id === task._id ? { ...t, status: task.status } : t)))
     } finally {
       setUpdatingTask(null)
+    }
+  }
+
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim()) {
+      setFeedbackError("Please provide some feedback.")
+      return
+    }
+    setSubmittingFeedback(true)
+    setFeedbackError("")
+    try {
+      const goalRes = await fetch(`/api/get-goals?id=${feedbackTask.goal_id}&user=${encodeURIComponent(userEmail)}`)
+      const goal = goalRes.ok ? (await goalRes.json())[0] : null
+      await fetch("/api/generate-next-task", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal,
+          lastTask: feedbackTask,
+          feedback: feedbackText,
+          user: userEmail
+        }),
+      })
+      setShowFeedbackModal(false)
+      setFeedbackText("")
+      setFeedbackTask(null)
+      // Refresh tasks and goals to show the new task
+      await fetchData()
+    } catch (error) {
+      setFeedbackError("Failed to submit feedback. Please try again.")
+    } finally {
+      setSubmittingFeedback(false)
     }
   }
 
@@ -159,8 +187,56 @@ export default function Tasks() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex">
+    <div className="min-h-screen bg-black text-white flex relative">
       <Sidenav />
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all">
+          <div className="bg-zinc-900 rounded-2xl shadow-2xl border border-blue-700/30 max-w-md w-full mx-4 p-8 animate-fadeIn">
+            <div className="flex flex-col items-center gap-2 mb-4">
+              <Award className="w-10 h-10 text-blue-400 animate-bounce" />
+              <h2 className="text-2xl font-bold text-white">Great job!</h2>
+              <p className="text-zinc-400 text-center">
+                Tell us how this task went. What went well? What was hard? Your feedback helps generate your next step!
+              </p>
+            </div>
+            <textarea
+              ref={feedbackInputRef}
+              className="w-full mt-2 p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-blue-500 outline-none resize-none transition"
+              rows={4}
+              placeholder="Share your thoughts..."
+              value={feedbackText}
+              onChange={e => setFeedbackText(e.target.value)}
+              disabled={submittingFeedback}
+              style={{ minHeight: 80 }}
+            />
+            {feedbackError && <div className="text-red-400 text-sm mt-2">{feedbackError}</div>}
+            <div className="flex gap-2 mt-6 justify-end">
+              <button
+                className="px-4 py-2 rounded-lg bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition"
+                onClick={() => {
+                  setShowFeedbackModal(false)
+                  setFeedbackText("")
+                  setFeedbackTask(null)
+                }}
+                disabled={submittingFeedback}
+              >
+                Cancel
+              </button>
+              <button
+                className={`px-4 py-2 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-2 ${
+                  submittingFeedback ? "opacity-60 cursor-not-allowed" : ""
+                }`}
+                onClick={handleFeedbackSubmit}
+                disabled={submittingFeedback}
+              >
+                {submittingFeedback && <Loader2 className="w-4 h-4 animate-spin" />}
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div
         className="flex-1 transition-all duration-300 ease-in-out"
         style={{ marginLeft: "var(--sidenav-width, 16rem)", padding: "2rem" }}
