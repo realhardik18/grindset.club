@@ -165,31 +165,6 @@ export default function GoalDetailPage() {
     }
   }
 
-  const handleTaskStatusChange = async (taskId, newStatus) => {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/update-task-status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskId, status: newStatus })
-      });
-      
-      if (res.ok) {
-        // Update local state
-        setTasks(tasks.map(task => 
-          task._id === taskId ? {...task, status: newStatus} : task
-        ));
-      } else {
-        console.error("Failed to update task status");
-      }
-    } catch (error) {
-      console.error("Error updating task status:", error);
-    } finally {
-      setLoading(false);
-      setActiveTaskMenu(null);
-    }
-  };
-
   // Open edit modal and prefill fields
   const openEditModal = () => {
     setEditGoal({
@@ -401,16 +376,6 @@ export default function GoalDetailPage() {
                     <p className="text-zinc-400 text-sm">Your active task spotlight</p>
                   </div>
                 </div>
-                
-                {currentTask && currentTask.status !== "completed" && (
-                  <button 
-                    onClick={() => handleTaskStatusChange(currentTask._id, "completed")}
-                    className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg flex items-center gap-2 border border-emerald-500/30 transition-all"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span className="text-sm font-medium">Mark Complete</span>
-                  </button>
-                )}
               </div>
 
               {currentTask ? (
@@ -432,7 +397,6 @@ export default function GoalDetailPage() {
                       >
                         {currentTask.status === "completed" ? "✓ Completed" : "⚡ In Progress"}
                       </div>
-                      
                       <div className="relative">
                         <button 
                           onClick={() => setActiveTaskMenu(currentTask._id)}
@@ -440,7 +404,6 @@ export default function GoalDetailPage() {
                         >
                           <MoreVertical className="w-5 h-5 text-zinc-400" />
                         </button>
-                        
                         {activeTaskMenu === currentTask._id && (
                           <div 
                             ref={taskMenuRef}
@@ -453,23 +416,6 @@ export default function GoalDetailPage() {
                               <Edit className="w-4 h-4" />
                               <span>Edit Task</span>
                             </button>
-                            {currentTask.status !== "completed" ? (
-                              <button
-                                onClick={() => handleTaskStatusChange(currentTask._id, "completed")}
-                                className="w-full px-4 py-2 text-left hover:bg-emerald-900/30 flex items-center gap-2 text-emerald-400"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                                <span>Mark Complete</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleTaskStatusChange(currentTask._id, "in_progress")}
-                                className="w-full px-4 py-2 text-left hover:bg-amber-900/30 flex items-center gap-2 text-amber-400"
-                              >
-                                <Circle className="w-4 h-4" />
-                                <span>Mark Incomplete</span>
-                              </button>
-                            )}
                           </div>
                         )}
                       </div>
@@ -650,24 +596,6 @@ export default function GoalDetailPage() {
                       </div>
 
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {task.status !== "completed" ? (
-                          <button
-                            onClick={() => handleTaskStatusChange(task._id, "completed")}
-                            className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg text-emerald-400 transition-colors"
-                            title="Mark as Complete"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleTaskStatusChange(task._id, "in_progress")}
-                            className="p-2 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg text-amber-400 transition-colors"
-                            title="Mark as Incomplete"
-                          >
-                            <Circle className="w-4 h-4" />
-                          </button>
-                        )}
-                        
                         <button
                           onClick={() => router.push(`/dashboard/tasks/edit/${task._id}`)}
                           className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-zinc-200 transition-colors"
@@ -855,3 +783,4 @@ export default function GoalDetailPage() {
     </div>
   )
 }
+
