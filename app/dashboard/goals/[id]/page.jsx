@@ -112,7 +112,7 @@ export default function GoalDetailPage() {
                 <Target className="w-12 h-12 text-red-400" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">Goal Not Found</h2>
-              <p className="text-zinc-400 mb-6">The goal you're looking for doesn't exist or has been removed.</p>
+              <p className="text-zinc-400 mb-6">The goal you&apos;re looking for doesn&apos;t exist or has been removed.</p>
               <button
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
                 onClick={() => router.push("/dashboard/goals")}
@@ -516,7 +516,7 @@ export default function GoalDetailPage() {
                     <Award className="w-10 h-10 text-emerald-400" />
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-3">Mission Accomplished! 🎉</h3>
-                  <p className="text-zinc-400 text-lg">You've successfully completed all tasks for this goal.</p>
+                  <p className="text-zinc-400 text-lg">You&apos;ve successfully completed all tasks for this goal.</p>
                 </div>
               )}
             </div>
