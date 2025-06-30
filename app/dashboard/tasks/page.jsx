@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useUser, RedirectToSignIn } from "@clerk/nextjs"
 import Sidenav from "../../components/Sidenav"
 import Link from "next/link"
 import {
@@ -21,6 +22,10 @@ import {
 } from "lucide-react"
 
 export default function Tasks() {
+  const { isSignedIn, user } = useUser()
+  if (!isSignedIn) return <RedirectToSignIn />
+  const userEmail = user?.emailAddresses?.[0]?.emailAddress
+
   const [tasks, setTasks] = useState([])
   const [goals, setGoals] = useState([])
   const [filter, setFilter] = useState("all")
@@ -29,15 +34,17 @@ export default function Tasks() {
   const [updatingTask, setUpdatingTask] = useState(null)
 
   useEffect(() => {
+    if (!userEmail) return;
     const fetchData = async () => {
       try {
-        const [tasksRes, goalsRes] = await Promise.all([fetch("/api/get-tasks-all"), fetch("/api/get-goals")])
-
+        const [tasksRes, goalsRes] = await Promise.all([
+          fetch(`/api/get-tasks-all?user=${encodeURIComponent(userEmail)}`),
+          fetch(`/api/get-goals?user=${encodeURIComponent(userEmail)}`)
+        ])
         if (tasksRes.ok) {
           const tasksData = await tasksRes.json()
           setTasks(tasksData)
         }
-
         if (goalsRes.ok) {
           const goalsData = await goalsRes.json()
           setGoals(goalsData)
@@ -48,36 +55,26 @@ export default function Tasks() {
         setLoading(false)
       }
     }
-
     fetchData()
-  }, [])
+  }, [userEmail])
 
   const handleToggleComplete = async (task) => {
     setUpdatingTask(task._id)
     const newStatus = task.status === "completed" ? "pending" : "completed"
-
-    // Optimistically update UI
     setTasks((tasks) => tasks.map((t) => (t._id === task._id ? { ...t, status: newStatus } : t)))
-
     try {
       await fetch("/api/update-task-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: task._id, status: newStatus }),
+        body: JSON.stringify({ id: task._id, status: newStatus, user: userEmail }),
       })
-
-      // If marking as completed, prompt for feedback and generate next task
       if (newStatus === "completed") {
         const feedback = window.prompt(
           "Great job! Please provide feedback on this task (what went well, what was hard, etc.):",
         )
-
         if (feedback) {
-          // Fetch goal context
-          const goalRes = await fetch(`/api/get-goals?id=${task.goal_id}`)
+          const goalRes = await fetch(`/api/get-goals?id=${task.goal_id}&user=${encodeURIComponent(userEmail)}`)
           const goal = goalRes.ok ? (await goalRes.json())[0] : null
-
-          // Send to API to generate next task
           await fetch("/api/generate-next-task", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -85,13 +82,13 @@ export default function Tasks() {
               goal,
               lastTask: task,
               feedback,
+              user: userEmail
             }),
           })
         }
       }
     } catch (error) {
       console.error("Failed to update task:", error)
-      // Revert optimistic update on error
       setTasks((tasks) => tasks.map((t) => (t._id === task._id ? { ...t, status: task.status } : t)))
     } finally {
       setUpdatingTask(null)

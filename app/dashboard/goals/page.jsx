@@ -4,15 +4,21 @@ import { useEffect, useState } from "react"
 import Sidenav from "@/app/components/Sidenav"
 import Link from "next/link"
 import { Plus, Target, Calendar, TrendingUp, Clock, CheckCircle, Loader2, Zap } from "lucide-react"
+import { useUser, RedirectToSignIn } from "@clerk/nextjs"
 
 export default function GoalsPage() {
+  const { isSignedIn, user } = useUser();
+  if (!isSignedIn) return <RedirectToSignIn />;
+  const userEmail = user?.emailAddresses?.[0]?.emailAddress
+
   const [goals, setGoals] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!userEmail) return;
     const fetchGoals = async () => {
       try {
-        const res = await fetch("/api/get-goals")
+        const res = await fetch(`/api/get-goals?user=${encodeURIComponent(userEmail)}`)
         if (res.ok) {
           const data = await res.json()
           setGoals(data)
@@ -25,7 +31,7 @@ export default function GoalsPage() {
     }
 
     fetchGoals()
-  }, [])
+  }, [userEmail])
 
   const calculateGoalStats = (goal) => {
     const createdDate = new Date(goal.created_at)

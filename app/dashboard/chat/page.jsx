@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { useUser, RedirectToSignIn } from "@clerk/nextjs"
 import Sidenav from '../../components/Sidenav'
 
 const BOT_WELCOME = "👋 Hi! I'm your productivity assistant bot here at grindset.club. Ask me about your tasks, goals, or anything else. If you need info from the web, just ask!"
@@ -16,6 +17,10 @@ function formatDateTime(dt) {
 }
 
 export default function Chat() {
+    const { isSignedIn, user } = useUser();
+    if (!isSignedIn) return <RedirectToSignIn />;
+    const userEmail = user?.emailAddresses?.[0]?.emailAddress
+
     const [messages, setMessages] = useState([{ role: 'assistant', message: BOT_WELCOME, created_at: new Date().toISOString() }])
     const [input, setInput] = useState('')
     const [loading, setLoading] = useState(false)
@@ -24,7 +29,8 @@ export default function Chat() {
     const messagesEndRef = useRef(null)
 
     useEffect(() => {
-        fetch('/api/chat-history')
+        if (!userEmail) return;
+        fetch(`/api/chat-history?user=${encodeURIComponent(userEmail)}`)
             .then(res => res.json())
             .then(data => {
                 if (data && data.length > 0) {
@@ -34,14 +40,15 @@ export default function Chat() {
                     setMessages([{ role: 'assistant', message: BOT_WELCOME, created_at: new Date().toISOString() }, ...recent])
                 }
             })
-    }, [])
+    }, [userEmail])
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages, showOlder])
 
     const fetchOlderChats = async () => {
-        const res = await fetch('/api/chat-history')
+        if (!userEmail) return;
+        const res = await fetch(`/api/chat-history?user=${encodeURIComponent(userEmail)}`)
         const data = await res.json()
         const now = Date.now()
         const thirtyMinAgo = now - 30 * 60 * 1000
@@ -52,18 +59,27 @@ export default function Chat() {
 
     const sendMessage = async (e) => {
         e.preventDefault()
-        if (!input.trim()) return
+        if (!input.trim() || !userEmail) return
         const userMsg = { role: 'user', message: input, created_at: new Date().toISOString() }
         setMessages(msgs => [...msgs, userMsg])
         setInput('')
         setLoading(true)
-        const res = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: input })
-        })
-        const data = await res.json()
-        setMessages(msgs => [...msgs, { role: 'assistant', message: data.message, created_at: new Date().toISOString() }])
+        try {
+            const payload = { message: input, user: userEmail };
+            console.log('Sending payload to /api/chat:', payload);
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                console.error('API error:', data)
+            }
+            setMessages(msgs => [...msgs, { role: 'assistant', message: data.message, created_at: new Date().toISOString() }])
+        } catch (err) {
+            console.error('Fetch error:', err)
+        }
         setLoading(false)
     }
 

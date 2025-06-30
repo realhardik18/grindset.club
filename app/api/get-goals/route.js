@@ -1,7 +1,11 @@
 import clientPromise from '@/lib/mongodb'
 
-export async function GET() {
-  const userId = 'hardik' // Hardcoded user
+export async function GET(req) {
+  const { searchParams } = new URL(req.url)
+  const userId = searchParams.get('user')
+  if (!userId) {
+    return new Response(JSON.stringify({ error: 'Missing user email' }), { status: 400 })
+  }
   try {
     const client = await clientPromise
     const db = client.db()

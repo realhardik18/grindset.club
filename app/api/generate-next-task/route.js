@@ -5,9 +5,10 @@ import { ObjectId } from 'mongodb'
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 export async function POST(req) {
-  const { goal, lastTask, feedback } = await req.json()
-  if (!goal || !lastTask || !feedback) {
-    return new Response(JSON.stringify({ error: 'Missing context' }), { status: 400 })
+  const { goal, lastTask, feedback, user } = await req.json()
+  const userId = user
+  if (!goal || !lastTask || !feedback || !userId) {
+    return new Response(JSON.stringify({ error: 'Missing context or user' }), { status: 400 })
   }
   const prompt = `
   You are a no-fluff, results-driven coach helping the user achieve their goal.
@@ -61,7 +62,7 @@ export async function POST(req) {
     const lastStep = lastTask.step || 1
     await db.collection('tasks').insertOne({
       goal_id: new ObjectId(goal._id),
-      user_id: goal.user_id,
+      user_id: userId,
       step: lastStep + 1,
       task_text: json.task_text,
       reason: json.reason || '',

@@ -4,15 +4,16 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Loader2, Save } from "lucide-react"
 import Sidenav from "@/app/components/Sidenav"
+import { useUser, RedirectToSignIn } from "@clerk/nextjs"
 
 export default function EditGoalPage() {
-  const { id } = useParams()
-  const router = useRouter()
-  const [goal, setGoal] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState("")
-
+  const { isSignedIn, user } = useUser();
+  const { id } = useParams();
+  const router = useRouter();
+  const [goal, setGoal] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -20,7 +21,10 @@ export default function EditGoalPage() {
     duration: "",
     target_outcome: "",
     existing_capabilities: "",
-  })
+  });
+
+  if (!isSignedIn) return <RedirectToSignIn />;
+  const userEmail = user?.emailAddresses?.[0]?.emailAddress
 
   useEffect(() => {
     const fetchGoal = async () => {
@@ -30,14 +34,6 @@ export default function EditGoalPage() {
           const data = await res.json()
           const goalData = Array.isArray(data) ? data[0] : data
           setGoal(goalData)
-          setFormData({
-            title: goalData.title || "",
-            description: goalData.description || "",
-            icon: goalData.icon || "",
-            duration: goalData.duration || "",
-            target_outcome: goalData.target_outcome || "",
-            existing_capabilities: goalData.existing_capabilities || "",
-          })
         }
       } catch (err) {
         setError("Failed to fetch goal details")
@@ -51,6 +47,19 @@ export default function EditGoalPage() {
     }
   }, [id])
 
+  useEffect(() => {
+    if (goal && (!formData.title && !formData.description && !formData.icon && !formData.duration && !formData.target_outcome && !formData.existing_capabilities)) {
+      setFormData({
+        title: goal.title || "",
+        description: goal.description || "",
+        icon: goal.icon || "",
+        duration: goal.duration || "",
+        target_outcome: goal.target_outcome || "",
+        existing_capabilities: goal.existing_capabilities || "",
+      })
+    }
+  }, [goal])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
@@ -60,7 +69,7 @@ export default function EditGoalPage() {
       const res = await fetch("/api/update-goal", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, goalId: id }),
+        body: JSON.stringify({ ...formData, goalId: id, user: userEmail }),
       })
 
       const data = await res.json()
@@ -206,9 +215,14 @@ export default function EditGoalPage() {
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors"
+                className="flex items-center justify-center gap-2 px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={saving}
               >
-                Cancel
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>Cancel</>
+                )}
               </button>
             </div>
           </form>

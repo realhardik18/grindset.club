@@ -5,12 +5,12 @@ import { ObjectId } from 'mongodb'
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 export async function PUT(req) {
-  const userId = 'hardik' // Replace with session logic as needed
   const body = await req.json()
-  const { goalId, title, description, icon, duration, target_outcome, existing_capabilities } = body
+  const { user, goalId, title, description, icon, duration, target_outcome, existing_capabilities } = body
+  const userId = user
 
-  if (!goalId) {
-    return new Response(JSON.stringify({ error: 'Missing goalId' }), { status: 400 })
+  if (!goalId || !userId) {
+    return new Response(JSON.stringify({ error: 'Missing goalId or user' }), { status: 400 })
   }
 
   try {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useUser, RedirectToSignIn } from "@clerk/nextjs"
 import Sidenav from '@/app/components/Sidenav'
 
 // Predefined emoji options
@@ -34,6 +35,10 @@ const steps = [
 ]
 
 export default function NewGoalPage() {
+  const { isSignedIn, user } = useUser();
+  if (!isSignedIn) return <RedirectToSignIn />;
+  const userEmail = user?.emailAddresses?.[0]?.emailAddress
+
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -77,12 +82,12 @@ export default function NewGoalPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!validateStep()) return
+    if (!validateStep() || !userEmail) return
     setLoading(true)
     const res = await fetch('/api/create-goal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, user: userEmail }),
     })
     setLoading(false)
     if (res.ok) {

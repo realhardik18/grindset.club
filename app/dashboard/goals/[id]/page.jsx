@@ -1,5 +1,6 @@
 "use client"
 
+import { useUser, RedirectToSignIn } from "@clerk/nextjs"
 import { useEffect, useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import {
@@ -28,18 +29,20 @@ import {
 import Sidenav from "@/app/components/Sidenav"
 
 export default function GoalDetailPage() {
-  const { id } = useParams()
-  const router = useRouter()
-  const [goal, setGoal] = useState(null)
-  const [tasks, setTasks] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [deleting, setDeleting] = useState(false)
-  const [deleteInput, setDeleteInput] = useState("")
-  const [deleteError, setDeleteError] = useState("")
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [editing, setEditing] = useState(false)
-  const [activeTaskMenu, setActiveTaskMenu] = useState(null)
-  const taskMenuRef = useRef(null)
+  const { isSignedIn, user } = useUser();
+  const { id } = useParams();
+  const router = useRouter();
+  const userEmail = user?.emailAddresses?.[0]?.emailAddress;
+  const [goal, setGoal] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteInput, setDeleteInput] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [activeTaskMenu, setActiveTaskMenu] = useState(null);
+  const taskMenuRef = useRef(null);
 
   // Close task menu when clicking outside
   useEffect(() => {
@@ -53,16 +56,16 @@ export default function GoalDetailPage() {
   }, []);
 
   useEffect(() => {
+    if (!id || !userEmail) return;
     const fetchGoal = async () => {
-      const res = await fetch(`/api/get-goals?id=${id}`)
+      const res = await fetch(`/api/get-goals?id=${id}&user=${encodeURIComponent(userEmail)}`)
       if (res.ok) {
         const data = await res.json()
         setGoal(Array.isArray(data) ? data[0] : data)
       }
     }
-
     const fetchTasks = async () => {
-      const res = await fetch(`/api/get-tasks?goal_id=${id}`)
+      const res = await fetch(`/api/get-tasks?goal_id=${id}&user=${encodeURIComponent(userEmail)}`)
       if (res.ok) {
         const data = await res.json()
         setTasks(
@@ -73,12 +76,9 @@ export default function GoalDetailPage() {
         )
       }
     }
-
-    if (id) {
-      setLoading(true)
-      Promise.all([fetchGoal(), fetchTasks()]).finally(() => setLoading(false))
-    }
-  }, [id])
+    setLoading(true)
+    Promise.all([fetchGoal(), fetchTasks()]).finally(() => setLoading(false))
+  }, [id, userEmail])
 
   if (loading) {
     return (

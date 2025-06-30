@@ -1,30 +1,18 @@
 import clientPromise from '@/lib/mongodb'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { cookies } from 'next/headers'
 import { ObjectId } from 'mongodb'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 export async function POST(req) {
-  //const cookieStore = await cookies()
-  //const session = cookieStore.get('session')
-  const userId = 'hardik' // Adjust this logic to match your actual session management
-
+  const body = await req.json()
+  const { user, title, description, icon, duration, target_outcome, existing_capabilities } = body
+  const userId = user
   if (!userId) {
-    return new Response(JSON.stringify({ error: 'Unauthorized: No session found' }), {
+    return new Response(JSON.stringify({ error: 'Unauthorized: No user provided' }), {
       status: 401,
     })
   }
-
-  const body = await req.json()
-  const {
-    title,
-    description,
-    icon,
-    duration,
-    target_outcome,
-    existing_capabilities,
-  } = body
 
   try {
     const client = await clientPromise

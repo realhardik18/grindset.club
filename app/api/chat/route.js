@@ -45,9 +45,9 @@ async function callTavily(query) {
 }
 
 export async function POST(req) {
-  const userId = 'hardik'
-  const { message } = await req.json()
-  if (!message) return new Response(JSON.stringify({ error: 'No message' }), { status: 400 })
+  const { message, user } = await req.json()
+  const userId = user
+  if (!message || !userId) return new Response(JSON.stringify({ error: 'No message or user' }), { status: 400 })
 
   // Fetch last 5 user/assistant messages for context
   const client = await clientPromise

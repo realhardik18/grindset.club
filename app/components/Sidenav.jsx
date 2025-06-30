@@ -2,10 +2,12 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useUser } from "@clerk/nextjs";
 
 export default function Sidenav() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
+  const { user } = useUser()
 
   useEffect(() => {
     document.documentElement.style.setProperty('--sidenav-width', isCollapsed ? '4rem' : '16rem')
@@ -119,15 +121,33 @@ export default function Sidenav() {
         <div className={`flex items-center p-3 rounded-xl bg-purple-600/20 border border-purple-500/30 transition-all duration-300 hover:bg-purple-600/30 ${
           isCollapsed ? 'justify-center' : 'space-x-3'
         }`}>
-          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 hover:bg-purple-500">
-            <span className="text-white text-sm font-semibold">U</span>
-          </div>
-          <div className={`min-w-0 flex-1 transition-all duration-300 ease-in-out ${
-            isCollapsed ? 'opacity-0 scale-95 w-0 overflow-hidden translate-x-2' : 'opacity-100 scale-100 w-auto translate-x-0'
-          }`}>
-            <p className="text-sm font-medium text-white truncate">User</p>
-            <p className="text-xs text-purple-400 truncate">Elite Member</p>
-          </div>
+          {user ? (
+            <>
+              <img
+                src={user.imageUrl}
+                alt="Profile"
+                className="w-8 h-8 rounded-full flex-shrink-0 transition-all duration-200 object-cover"
+              />
+              <div className={`min-w-0 flex-1 transition-all duration-300 ease-in-out ${
+                isCollapsed ? 'opacity-0 scale-95 w-0 overflow-hidden translate-x-2' : 'opacity-100 scale-100 w-auto translate-x-0'
+              }`}>
+                <p className="text-sm font-medium text-white truncate">{user.fullName || user.username || user.emailAddresses?.[0]?.emailAddress}</p>
+                <p className="text-xs text-purple-400 truncate">{user.emailAddresses?.[0]?.emailAddress}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 hover:bg-purple-500">
+                <span className="text-white text-sm font-semibold">U</span>
+              </div>
+              <div className={`min-w-0 flex-1 transition-all duration-300 ease-in-out ${
+                isCollapsed ? 'opacity-0 scale-95 w-0 overflow-hidden translate-x-2' : 'opacity-100 scale-100 w-auto translate-x-0'
+              }`}>
+                <p className="text-sm font-medium text-white truncate">User</p>
+                <p className="text-xs text-purple-400 truncate">Elite Member</p>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
