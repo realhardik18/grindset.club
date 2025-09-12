@@ -1,11 +1,17 @@
+"use client";
+
 import { Dithering } from '@paper-design/shaders-react';
+import { useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
 
 export default function Home() {
+  const tasks=useQuery(api.tasks.get)
+  console.log(tasks)
   return (
     <div className="flex flex-row h-screen bg-black">
       <div className="w-3/4">
         <div className='pl-5 pt-5'>
-          <a className='text-4xl'>hello</a>
+        {tasks?.map(({ _id, text }) => <div key={_id}>{text}</div>)}
         </div>
       </div>
         <div className="w-1/4">
