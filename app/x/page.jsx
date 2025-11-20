@@ -166,7 +166,7 @@ export default function XAnalytics() {
             {metric}
           </h3>
         </div>
-        <div className={`flex justify-center flex-grow items-center ${!isExport ? 'w-full overflow-x-auto pb-2 px-2' : ''}`}>
+        <div className={`flex flex-grow items-center ${!isExport ? 'w-full overflow-x-auto pb-4 px-2 justify-start md:justify-center' : 'justify-center'}`}>
           <div 
             className={`inline-flex gap-[2px] p-4 rounded-xl border ${isExport ? 'scale-110' : 'bg-white/[0.02] border-white/5 min-w-fit'}`}
             style={isExport ? {
@@ -290,7 +290,7 @@ export default function XAnalytics() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white p-8 font-sans selection:bg-white/20">
+    <main className="min-h-screen bg-black text-white p-4 md:p-8 font-sans selection:bg-white/20">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col items-center mb-16 pt-8 px-4 text-center">
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/50 tracking-tighter">
@@ -426,7 +426,7 @@ export default function XAnalytics() {
               </div>
               
               <div className="flex flex-col gap-8 w-full flex-1 items-center justify-center">
-                {['posts', 'new follows', 'likes', 'impressions'].map(metric => renderContributionChart(metric, true))}
+                {['Create Post', 'New follows', 'Likes', 'Impressions'].map(metric => renderContributionChart(metric, true))}
               </div>
 
               <div 
