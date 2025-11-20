@@ -317,7 +317,7 @@ export default function XAnalytics() {
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <input
                   type="file"
-                  accept=".csv"
+                  accept=".csv,text/csv,application/vnd.ms-excel,application/csv,text/x-csv,application/x-csv,text/comma-separated-values,text/x-comma-separated-values"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
